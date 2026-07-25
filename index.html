@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Utility Split</title>
+<meta name="description" content="Work out a tenant's share of a gas and hydro bill, with days away taken off.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#E7ECEE;
+    --card:#FBFCFD;
+    --ink:#14212A;
+    --muted:#657882;
+    --rule:#C6D1D6;
+    --gas:#B4611A;
+    --gas-soft:#F5E7DA;
+    --hydro:#2E6E86;
+    --hydro-soft:#DFEAEF;
+    --away:#8C97A0;
+    --focus:#1B5A70;
+    --pad:clamp(16px,3vw,32px);
+    --display:"Bricolage Grotesque",Georgia,serif;
+    --body:"IBM Plex Sans",system-ui,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--body);
+    font-size:15px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1020px;margin:0 auto;padding:var(--pad) var(--pad) 96px}
+
+  /* ---------- header ---------- */
+  header{border-bottom:2px solid var(--ink);padding-bottom:18px;margin-bottom:28px}
+  h1{
+    font-family:var(--display);
+    font-weight:700;
+    font-size:clamp(30px,5.2vw,46px);
+    letter-spacing:-.02em;
+    line-height:1;
+    margin:0 0 8px;
+  }
+  .lede{max-width:56ch;margin:0;color:var(--muted)}
+  .privacy{
+    margin-top:12px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted);
+  }
+
+  /* ---------- section scaffolding ---------- */
+  section{margin-top:34px}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--muted);
+    display:flex;align-items:center;gap:10px;margin-bottom:14px;
+  }
+  .eyebrow::after{content:"";flex:1;height:1px;background:var(--rule)}
+
+  /* ---------- bill cards ---------- */
+  .bills{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .bill{
+    background:var(--card);
+    border:1px solid var(--rule);
+    border-top:4px solid var(--accent);
+    padding:18px;
+  }
+  .bill.gas{--accent:var(--gas);--soft:var(--gas-soft)}
+  .bill.hydro{--accent:var(--hydro);--soft:var(--hydro-soft)}
+  .bill h2{
+    font-family:var(--display);font-size:20px;font-weight:700;letter-spacing:-.01em;
+    margin:0 0 2px;
+  }
+  .bill .src{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.04em}
+  .drop{
+    margin:14px 0;padding:16px;text-align:center;cursor:pointer;
+    border:1.5px dashed var(--rule);background:transparent;
+    display:block;width:100%;font:inherit;color:var(--muted);
+  }
+  .drop:hover,.drop.over{border-color:var(--accent);background:var(--soft);color:var(--ink)}
+  .drop strong{display:block;font-weight:600;color:var(--ink)}
+  .drop .hint{font-size:13px}
+  .drop.loaded{border-style:solid;border-color:var(--accent);background:var(--soft);color:var(--ink)}
+
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .f-full{grid-column:1/-1}
+  label{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+  input,select{
+    width:100%;font-family:var(--mono);font-size:14px;color:var(--ink);
+    background:#fff;border:1px solid var(--rule);border-radius:0;padding:8px 9px;
+  }
+  input:focus-visible,select:focus-visible,button:focus-visible,.drop:focus-visible{
+    outline:2px solid var(--focus);outline-offset:2px;
+  }
+  .readout{
+    margin-top:12px;padding-top:10px;border-top:1px solid var(--rule);
+    font-family:var(--mono);font-size:12.5px;color:var(--muted);
+    display:flex;justify-content:space-between;gap:10px;
+  }
+  .readout b{color:var(--ink);font-weight:600}
+  .note{
+    margin-top:10px;font-size:13px;color:var(--gas);
+    border-left:2px solid var(--gas);padding-left:10px;
+  }
+  .note:empty{display:none}
+
+  /* ---------- absence ---------- */
+  .choice{display:flex;gap:8px;margin-bottom:14px}
+  .choice button{
+    font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;
+    padding:9px 16px;background:transparent;border:1px solid var(--rule);cursor:pointer;color:var(--muted);
+  }
+  .choice button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
+  .away-row{display:grid;grid-template-columns:1fr 1fr auto auto;gap:12px;align-items:end;margin-bottom:10px}
+  .away-row .nights{font-family:var(--mono);font-size:12.5px;color:var(--muted);padding-bottom:9px;white-space:nowrap}
+  .icon-btn{
+    background:transparent;border:1px solid var(--rule);cursor:pointer;color:var(--muted);
+    font-family:var(--mono);font-size:16px;line-height:1;padding:8px 12px;
+  }
+  .icon-btn:hover{border-color:var(--ink);color:var(--ink)}
+  .link-btn{
+    background:none;border:none;padding:0;cursor:pointer;color:var(--focus);
+    font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+    border-bottom:1px solid currentColor;
+  }
+  .settings{display:grid;grid-template-columns:180px 1fr;gap:18px;align-items:end;margin-top:6px}
+
+  /* ---------- signature: the cycle ribbons ---------- */
+  .ribbons{background:var(--card);border:1px solid var(--rule);padding:18px var(--pad)}
+  .ribbon{margin-bottom:18px}
+  .ribbon:last-of-type{margin-bottom:0}
+  .ribbon-head{display:flex;justify-content:space-between;font-family:var(--mono);
+    font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .ribbon-head b{color:var(--ink);font-weight:600}
+  .track{position:relative;height:26px;background:repeating-linear-gradient(
+      90deg,var(--rule) 0 1px,transparent 1px 100%) 0 0/ calc(100%/24) 100%;
+    border-bottom:1px solid var(--rule)}
+  .span{position:absolute;top:0;bottom:0;background:var(--tone)}
+  .span.gas{--tone:var(--gas-soft);border-left:2px solid var(--gas);border-right:2px solid var(--gas)}
+  .span.hydro{--tone:var(--hydro-soft);border-left:2px solid var(--hydro);border-right:2px solid var(--hydro)}
+  .gap{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(
+      45deg,var(--away) 0 2px,transparent 2px 6px);opacity:.75}
+  .axis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;
+    color:var(--muted);margin-top:6px}
+
+  /* ---------- results ---------- */
+  .totals{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+  .tot{background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--accent);padding:16px}
+  .tot.gas{--accent:var(--gas)}
+  .tot.hydro{--accent:var(--hydro)}
+  .tot h3{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);margin:0 0 10px;font-weight:600}
+  .big{font-family:var(--display);font-size:38px;font-weight:700;letter-spacing:-.02em;line-height:1}
+  .breakdown{margin-top:10px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .breakdown div{display:flex;justify-content:space-between;border-top:1px solid var(--rule);padding:4px 0}
+  .grand{
+    margin-top:18px;background:var(--ink);color:var(--paper);padding:18px var(--pad);
+    display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  }
+  .grand .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+  .grand .amt{font-family:var(--display);font-size:clamp(30px,6vw,44px);font-weight:700;letter-spacing:-.02em}
+  .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .actions button{
+    font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+    padding:11px 16px;background:var(--card);border:1px solid var(--ink);color:var(--ink);cursor:pointer;
+  }
+  .actions button:hover{background:var(--ink);color:var(--paper)}
+  .summary{
+    margin-top:18px;background:var(--card);border:1px solid var(--rule);padding:16px;
+    font-family:var(--mono);font-size:13px;white-space:pre-wrap;line-height:1.7;
+  }
+  .empty{background:var(--card);border:1px dashed var(--rule);padding:28px;text-align:center;color:var(--muted)}
+  .toast{
+    position:fixed;left:50%;bottom:24px;transform:translateX(-50%);
+    background:var(--ink);color:var(--paper);padding:11px 18px;
+    font-family:var(--mono);font-size:12px;letter-spacing:.06em;
+    opacity:0;pointer-events:none;transition:opacity .18s ease;z-index:50;
+  }
+  .toast.show{opacity:1}
+  footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--rule);
+    font-family:var(--mono);font-size:11.5px;color:var(--muted);line-height:1.8}
+
+  @media (max-width:760px){
+    .bills,.totals,.settings{grid-template-columns:1fr}
+    .away-row{grid-template-columns:1fr 1fr;}
+    .away-row .nights{grid-column:1/-1;padding-bottom:0}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Utility Split</h1>
+    <p class="lede">Drop in the gas and hydro bills, say when the tenant was away, and get their share of each cycle plus a row you can paste straight into the tracking workbook.</p>
+    <p class="privacy">Bills are read in your browser. Nothing is uploaded or stored.</p>
+  </header>
+
+  <section>
+    <div class="eyebrow">1 · The bills</div>
+    <div class="bills">
+
+      <div class="bill gas" id="card-gas">
+        <h2>Natural gas</h2>
+        <div class="src">Enbridge · total amount including HST</div>
+        <button class="drop" id="drop-gas" type="button">
+          <strong>Drop the Enbridge PDF here</strong>
+          <span class="hint">or click to choose a file</span>
+        </button>
+        <input type="file" id="file-gas" accept="application/pdf,.pdf" hidden>
+        <div class="fields">
+          <div><label for="gas-start">Cycle start</label><input type="date" id="gas-start"></div>
+          <div><label for="gas-end">Cycle end</label><input type="date" id="gas-end"></div>
+          <div><label for="gas-amount">Bill amount</label><input type="number" step="0.01" min="0" id="gas-amount" placeholder="0.00"></div>
+          <div>
+            <label for="gas-method">Day count</label>
+            <select id="gas-method">
+              <option value="diff" selected>End minus start</option>
+              <option value="diffMinus1">End minus start, less 1</option>
+              <option value="diffPlus1">End minus start, plus 1</option>
+            </select>
+          </div>
+        </div>
+        <div class="readout"><span>Days in cycle</span><b id="gas-days">–</b></div>
+        <p class="note" id="gas-note"></p>
+      </div>
+
+      <div class="bill hydro" id="card-hydro">
+        <h2>Hydro, water, stormwater</h2>
+        <div class="src">Alectra · total current charges, before the rebate</div>
+        <button class="drop" id="drop-hydro" type="button">
+          <strong>Drop the Alectra PDF here</strong>
+          <span class="hint">or click to choose a file</span>
+        </button>
+        <input type="file" id="file-hydro" accept="application/pdf,.pdf" hidden>
+        <div class="fields">
+          <div><label for="hydro-start">Cycle start</label><input type="date" id="hydro-start"></div>
+          <div><label for="hydro-end">Cycle end</label><input type="date" id="hydro-end"></div>
+          <div><label for="hydro-amount">Bill amount</label><input type="number" step="0.01" min="0" id="hydro-amount" placeholder="0.00"></div>
+          <div>
+            <label for="hydro-method">Day count</label>
+            <select id="hydro-method">
+              <option value="diff">End minus start</option>
+              <option value="diffMinus1" selected>End minus start, less 1</option>
+              <option value="diffPlus1">End minus start, plus 1</option>
+            </select>
+          </div>
+        </div>
+        <div class="readout"><span>Days in cycle</span><b id="hydro-days">–</b></div>
+        <p class="note" id="hydro-note"></p>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">2 · Time away</div>
+    <p class="lede" style="margin-bottom:14px">Was the tenant away at any point inside these cycles? Enter the day they left and the day they came back. Nights away are counted, and each absence is matched against each bill's own dates.</p>
+    <div class="choice" role="group" aria-label="Was the tenant away">
+      <button type="button" id="away-no" aria-pressed="true">No, here the whole time</button>
+      <button type="button" id="away-yes" aria-pressed="false">Yes, away for a stretch</button>
+    </div>
+    <div id="away-list" hidden></div>
+    <button type="button" class="link-btn" id="add-away" hidden>+ Add another absence</button>
+  </section>
+
+  <section>
+    <div class="eyebrow">3 · Share</div>
+    <div class="settings">
+      <div>
+        <label for="pct">Tenant's percentage</label>
+        <input type="number" id="pct" value="30" min="0" max="100" step="0.5">
+      </div>
+      <p class="lede" style="margin:0">Applied to the full bill, then prorated by the nights the tenant was actually in the unit.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="eyebrow">4 · What the tenant owes</div>
+    <div id="results">
+      <div class="empty">Add a bill above and the split shows up here.</div>
+    </div>
+  </section>
+
+  <footer>
+    Gas amount is the total including HST. Hydro amount is total current charges, which covers electricity, water, wastewater and stormwater, taken before the Ontario Electricity Rebate.<br>
+    Day counts follow the tracking workbook: gas is end minus start, hydro is end minus start less one, since hydro cycles share their end and start dates.
+  </footer>
+
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="parsers.js"></script>
+<script>
+(function(){
+  'use strict';
+  var P = window.BillParsers;
+  if (window.pdfjsLib) {
+    window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+
+  var $ = function(id){ return document.getElementById(id); };
+  var away = [];
+  var awaySeq = 0;
+
+  /* ---------- helpers ---------- */
+
+  function parseInputDate(v){
+    if(!v) return null;
+    var p = v.split('-');
+    if(p.length !== 3) return null;
+    return P.utc(+p[0], +p[1]-1, +p[2]);
+  }
+  function money(n){
+    return '$' + Number(n).toLocaleString('en-CA',{minimumFractionDigits:2,maximumFractionDigits:2});
+  }
+  function pretty(d){
+    return d ? d.toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}) : '';
+  }
+  function toast(msg){
+    var t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(t._h);
+    t._h = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+  }
+  function copy(text, msg){
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ toast(msg); },function(){ fallbackCopy(text,msg); });
+    } else { fallbackCopy(text,msg); }
+  }
+  function fallbackCopy(text,msg){
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); toast(msg); }catch(e){ toast('Copy failed. Select the text by hand.'); }
+    document.body.removeChild(ta);
+  }
+
+  /* ---------- reading a PDF ---------- */
+
+  function readPdf(file, expected){
+    var note = $(expected + '-note');
+    note.textContent = 'Reading ' + file.name + '…';
+    var reader = new FileReader();
+    reader.onload = function(){
+      var task = window.pdfjsLib.getDocument({data:new Uint8Array(reader.result)});
+      task.promise.then(function(doc){
+        var pages = [];
+        for(var i=1;i<=doc.numPages;i++) pages.push(doc.getPage(i));
+        return Promise.all(pages).then(function(ps){
+          return Promise.all(ps.map(function(p){ return p.getTextContent(); }));
+        });
+      }).then(function(contents){
+        var text = contents.map(function(tc){
+          return tc.items.map(function(it){ return it.str; }).join(' ');
+        }).join('\n');
+        var kind = P.detectKind(text) || expected;
+        var r = P.parseBill(text, kind);
+        if(kind !== expected){
+          note.textContent = '';
+          toast('That is the ' + (kind==='gas'?'gas':'hydro') + ' bill. Filed it there.');
+        }
+        apply(kind, r, file.name);
+      }).catch(function(err){
+        note.textContent = 'Could not read that PDF. Type the numbers in instead.';
+        console.error(err);
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  function apply(kind, r, filename){
+    if(r.start) $(kind+'-start').value = P.toISO(r.start);
+    if(r.end) $(kind+'-end').value = P.toISO(r.end);
+    if(r.amount !== null) $(kind+'-amount').value = r.amount.toFixed(2);
+    var drop = $('drop-'+kind);
+    drop.classList.add('loaded');
+    drop.querySelector('strong').textContent = filename;
+    drop.querySelector('.hint').textContent = 'Read successfully. Click to swap in a different file.';
+    var note = $(kind+'-note');
+    var msgs = r.notes.slice();
+    if(kind==='hydro' && r.billDays){
+      var d = P.cycleDays(parseInputDate($('hydro-start').value), parseInputDate($('hydro-end').value), $('hydro-method').value);
+      if(d !== r.billDays) msgs.push('The bill states ' + r.billDays + ' days for this cycle. This app counts ' + d + '. Change the day count or the dates if you want to match the bill.');
+    }
+    note.textContent = msgs.join(' ');
+    render();
+  }
+
+  function wireDrop(kind){
+    var drop = $('drop-'+kind), input = $('file-'+kind);
+    drop.addEventListener('click', function(){ input.click(); });
+    input.addEventListener('change', function(){
+      if(input.files && input.files[0]) readPdf(input.files[0], kind);
+      input.value = '';
+    });
+    ['dragenter','dragover'].forEach(function(ev){
+      drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.add('over'); });
+    });
+    ['dragleave','drop'].forEach(function(ev){
+      drop.addEventListener(ev, function(e){ e.preventDefault(); drop.classList.remove('over'); });
+    });
+    drop.addEventListener('drop', function(e){
+      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if(f) readPdf(f, kind);
+    });
+  }
+  wireDrop('gas'); wireDrop('hydro');
+
+  /* ---------- absences ---------- */
+
+  function setAwayMode(on){
+    $('away-yes').setAttribute('aria-pressed', on ? 'true':'false');
+    $('away-no').setAttribute('aria-pressed', on ? 'false':'true');
+    $('away-list').hidden = !on;
+    $('add-away').hidden = !on;
+    if(on && away.length === 0) addAway();
+    if(!on){ away = []; $('away-list').innerHTML = ''; }
+    render();
+  }
+  function addAway(){
+    var id = 'a' + (++awaySeq);
+    away.push({id:id, from:null, to:null});
+    var row = document.createElement('div');
+    row.className = 'away-row';
+    row.dataset.id = id;
+    row.innerHTML =
+      '<div><label for="'+id+'-from">Left on</label><input type="date" id="'+id+'-from"></div>' +
+      '<div><label for="'+id+'-to">Came back</label><input type="date" id="'+id+'-to"></div>' +
+      '<div class="nights">– nights</div>' +
+      '<button type="button" class="icon-btn" aria-label="Remove this absence">×</button>';
+    $('away-list').appendChild(row);
+    row.querySelector('.icon-btn').addEventListener('click', function(){
+      away = away.filter(function(a){ return a.id !== id; });
+      row.remove();
+      if(away.length === 0) setAwayMode(false); else render();
+    });
+    row.addEventListener('change', function(){
+      var a = away.filter(function(x){ return x.id === id; })[0];
+      if(!a) return;
+      a.from = parseInputDate($(id+'-from').value);
+      a.to = parseInputDate($(id+'-to').value);
+      render();
+    });
+  }
+  $('away-yes').addEventListener('click', function(){ setAwayMode(true); });
+  $('away-no').addEventListener('click', function(){ setAwayMode(false); });
+  $('add-away').addEventListener('click', function(){ addAway(); render(); });
+
+  /* ---------- the calculation ---------- */
+
+  function readBill(kind){
+    var start = parseInputDate($(kind+'-start').value);
+    var end = parseInputDate($(kind+'-end').value);
+    var amount = $(kind+'-amount').value === '' ? null : parseFloat($(kind+'-amount').value);
+    var method = $(kind+'-method').value;
+    var days = P.cycleDays(start, end, method);
+    if(days !== null && days <= 0) days = null;
+    var ranges = away.filter(function(a){ return a.from && a.to && a.to > a.from; });
+    var awayDays = days ? Math.min(P.awayInCycle(start, end, ranges), days) : 0;
+    var present = days ? days - awayDays : null;
+    var pct = parseFloat($('pct').value);
+    if(!isFinite(pct)) pct = 0;
+    return {
+      kind:kind, start:start, end:end, amount:amount, method:method, days:days,
+      awayDays:awayDays, present:present, pct:pct,
+      rawDiff: (start && end) ? P.dayDiff(start,end) : null,
+      share: (amount !== null && days) ? P.share(amount, pct, present, days) : null,
+      complete: !!(start && end && days && amount !== null)
+    };
+  }
+
+  function rowsFor(b){
+    // Tab separated, in the column order each sheet already uses.
+    var s = P.toISO(b.start), e = P.toISO(b.end), amt = b.amount.toFixed(2);
+    if(b.kind === 'gas') return [s,e,amt,b.days,b.present,b.share.toFixed(2)].join('\t');
+    return [s,e,amt,b.rawDiff,b.days,b.present,b.share.toFixed(2)].join('\t');
+  }
+
+  function csvFor(list){
+    var head = 'Utility,Start,End,Amount,Days in cycle,Nights away,Days present,Percent,Tenant share';
+    var lines = list.map(function(b){
+      return [b.kind==='gas'?'Gas':'Hydro', P.toISO(b.start), P.toISO(b.end), b.amount.toFixed(2),
+              b.days, b.awayDays, b.present, b.pct, b.share.toFixed(2)].join(',');
+    });
+    return head + '\n' + lines.join('\n') + '\n';
+  }
+
+  function summaryFor(list, total){
+    var lines = list.map(function(b){
+      var label = b.kind === 'gas' ? 'Gas' : 'Hydro, water and stormwater';
+      var l = label + ', ' + pretty(b.start) + ' to ' + pretty(b.end) + '\n' +
+              '  Bill ' + money(b.amount) + ' over ' + b.days + ' days, your share ' + b.pct + '%\n';
+      if(b.awayDays > 0) l += '  Away ' + b.awayDays + ' of those nights, charged for ' + b.present + ' days\n';
+      l += '  You owe ' + money(b.share);
+      return l;
+    });
+    return lines.join('\n\n') + '\n\nTotal due: ' + money(total);
+  }
+
+  /* ---------- the cycle ribbons ---------- */
+
+  function ribbons(list){
+    var stamps = [];
+    list.forEach(function(b){ stamps.push(+b.start, +b.end); });
+    away.forEach(function(a){ if(a.from && a.to){ stamps.push(+a.from, +a.to); } });
+    var min = Math.min.apply(null, stamps), max = Math.max.apply(null, stamps);
+    var pad = Math.max((max-min)*0.04, 86400000);
+    min -= pad; max += pad;
+    var span = max - min || 1;
+    var pos = function(t){ return ((t - min) / span * 100).toFixed(3) + '%'; };
+
+    var html = '<div class="ribbons">';
+    list.forEach(function(b){
+      var bars = '<div class="span ' + b.kind + '" style="left:' + pos(+b.start) +
+                 ';width:' + (((+b.end - +b.start)/span)*100).toFixed(3) + '%"></div>';
+      away.forEach(function(a){
+        if(!a.from || !a.to || a.to <= a.from) return;
+        var lo = Math.max(+b.start, +a.from), hi = Math.min(+b.end, +a.to);
+        if(hi <= lo) return;
+        bars += '<div class="gap" style="left:' + pos(lo) + ';width:' + (((hi-lo)/span)*100).toFixed(3) + '%"></div>';
+      });
+      html +=
+        '<div class="ribbon">' +
+          '<div class="ribbon-head"><span>' + (b.kind==='gas'?'Gas cycle':'Hydro cycle') + '</span>' +
+          '<span><b>' + b.present + '</b> of ' + b.days + ' days charged</span></div>' +
+          '<div class="track">' + bars + '</div>' +
+          '<div class="axis"><span>' + pretty(b.start) + '</span><span>' + pretty(b.end) + '</span></div>' +
+        '</div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  /* ---------- render ---------- */
+
+  function render(){
+    var gas = readBill('gas'), hydro = readBill('hydro');
+    $('gas-days').textContent = gas.days === null ? '–' : gas.days;
+    $('hydro-days').textContent = hydro.days === null ? '–' : hydro.days;
+
+    away.forEach(function(a){
+      var row = document.querySelector('.away-row[data-id="' + a.id + '"]');
+      if(!row) return;
+      var n = (a.from && a.to && a.to > a.from) ? P.dayDiff(a.from, a.to) : null;
+      row.querySelector('.nights').textContent = n === null ? '– nights' : n + (n===1?' night':' nights');
+    });
+
+    var list = [gas, hydro].filter(function(b){ return b.complete; });
+    var box = $('results');
+    if(list.length === 0){
+      box.innerHTML = '<div class="empty">Add a bill above and the split shows up here.</div>';
+      return;
+    }
+
+    var total = list.reduce(function(s,b){ return s + b.share; }, 0);
+    var html = ribbons(list) + '<div class="totals">';
+    list.forEach(function(b){
+      html +=
+        '<div class="tot ' + b.kind + '">' +
+          '<h3>' + (b.kind==='gas' ? 'Gas share' : 'Hydro share') + '</h3>' +
+          '<div class="big">' + money(b.share) + '</div>' +
+          '<div class="breakdown">' +
+            '<div><span>Bill total</span><span>' + money(b.amount) + '</span></div>' +
+            '<div><span>Days in cycle</span><span>' + b.days + '</span></div>' +
+            '<div><span>Nights away</span><span>' + b.awayDays + '</span></div>' +
+            '<div><span>Days charged</span><span>' + b.present + '</span></div>' +
+            '<div><span>Share applied</span><span>' + b.pct + '%</span></div>' +
+          '</div>' +
+        '</div>';
+    });
+    html += '</div>';
+    html += '<div class="grand"><span class="lbl">Total owed by tenant</span><span class="amt">' + money(total) + '</span></div>';
+    html += '<div class="actions">';
+    if(gas.complete) html += '<button type="button" data-act="row-gas">Copy gas row</button>';
+    if(hydro.complete) html += '<button type="button" data-act="row-hydro">Copy hydro row</button>';
+    html += '<button type="button" data-act="csv">Download CSV</button>';
+    html += '<button type="button" data-act="summary">Copy summary</button>';
+    html += '</div>';
+    html += '<div class="summary" id="summary-text">' + summaryFor(list, total).replace(/</g,'&lt;') + '</div>';
+    box.innerHTML = html;
+
+    box.querySelectorAll('[data-act]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var a = btn.dataset.act;
+        if(a === 'row-gas') copy(rowsFor(gas), 'Gas row copied. Paste into the Gas tab.');
+        if(a === 'row-hydro') copy(rowsFor(hydro), 'Hydro row copied. Paste into the Hydro tab.');
+        if(a === 'summary') copy(summaryFor(list, total), 'Summary copied.');
+        if(a === 'csv'){
+          var csv = csvFor(list);
+          var url;
+          if(window.URL && window.URL.createObjectURL){
+            url = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+          } else {
+            url = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+          }
+          var link = document.createElement('a');
+          var stamp = P.toISO(list[list.length-1].end) || 'export';
+          link.href = url; link.download = 'utility-split-' + stamp + '.csv';
+          document.body.appendChild(link); link.click(); document.body.removeChild(link);
+          if(window.URL && window.URL.revokeObjectURL && url.indexOf('blob:') === 0) URL.revokeObjectURL(url);
+        }
+      });
+    });
+  }
+
+  ['gas','hydro'].forEach(function(k){
+    ['-start','-end','-amount','-method'].forEach(function(sfx){
+      $(k+sfx).addEventListener('change', render);
+      $(k+sfx).addEventListener('input', render);
+    });
+  });
+  $('pct').addEventListener('input', render);
+  render();
+})();
+</script>
+</body>
+</html>
