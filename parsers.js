@@ -52,10 +52,16 @@
     return String(text).replace(/[ \t\u00a0]+/g, ' ');
   }
 
+  // Order matters. The City of Guelph water bill and the Alectra bill share
+  // several words, including "total current charges" and "stormwater", so each
+  // is matched on a marker the other one never carries.
   function detectKind(text) {
     var c = squash(text).toLowerCase();
-    if (/enbridge|smellgas|naturalgas/.test(c)) return 'gas';
-    if (/alectra|guelphhydro|stormwater|totalcurrentcharges/.test(c)) return 'hydro';
+    if (/enbridge|smellgas|chargesfornaturalgas/.test(c)) return 'gas';
+    if (/alectra|guelphhydro\.com|www\.guelphhydro|yourelectricitycharges/.test(c)) return 'hydro';
+    if (/waterbilling@guelph|guelph\.ca\/waterbill|cityofguelph|wastewaterbasic/.test(c)) return 'water';
+    if (/yourbill|ontarioelectricityrebate/.test(c)) return 'hydro';
+    if (/waterbill|stormwater/.test(c)) return 'water';
     return null;
   }
 
@@ -100,6 +106,11 @@
     var amt = /Totalcurrentcharges\$?(-?[\d,]+\.\d{2})/i.exec(c);
     if (amt) out.amount = money(amt[1]);
 
+    // Older Alectra bills carried the city's water, wastewater and stormwater
+    // lines. If this one does, a separate water bill for the same period would
+    // be counted twice.
+    out.includesWater = /WaterCharges:CityWater|TotalWaterCharges/i.test(c);
+
     // Metering table, electric row: service, start, end, days.
     var row = /Electric\s+(\d{1,2}\/\d{1,2}\/\d{2,4})\s+(\d{1,2}\/\d{1,2}\/\d{2,4})\s+(\d{1,3})\b/i.exec(sp);
     if (!row) {
@@ -122,12 +133,42 @@
     return out;
   }
 
+  /* ---------------- City of Guelph water ---------------- */
+
+  function parseWater(text) {
+    var c = squash(text);
+    var out = { kind: 'water', start: null, end: null, amount: null, billDays: null, notes: [] };
+
+    // "Current Charges From: Jun 23, 2026 To: Jul 23, 2026 30 days"
+    var period = /CurrentChargesFrom:([A-Za-z]{3,9}\.?\d{1,2},\d{4})To:([A-Za-z]{3,9}\.?\d{1,2},\d{4})(\d{1,3})?days?/i.exec(c) ||
+                 /CurrentChargesFrom:([A-Za-z]{3,9}\.?\d{1,2},\d{4})To:([A-Za-z]{3,9}\.?\d{1,2},\d{4})/i.exec(c);
+    if (period) {
+      out.start = parseWordDate(period[1]);
+      out.end = parseWordDate(period[2]);
+      if (period[3]) out.billDays = parseInt(period[3], 10);
+    }
+
+    var cur = /TotalCurrentCharges:?\$?(-?[\d,]+\.\d{2})/i.exec(c);
+    var due = /TotalAmountDue:?\$?(-?[\d,]+\.\d{2})/i.exec(c);
+    if (cur) out.amount = money(cur[1]);
+    else if (due) out.amount = money(due[1]);
+
+    if (cur && due && money(cur[1]) !== money(due[1])) {
+      out.notes.push('Total amount due is ' + money(due[1]).toFixed(2) +
+        ', which includes a balance carried over. Using the current charges only.');
+    }
+    if (!out.start || !out.end) out.notes.push('Could not read the current charges dates. Type them in.');
+    if (out.amount === null) out.notes.push('Could not read Total Current Charges. Type it in.');
+    return out;
+  }
+
   function parseBill(text, forcedKind) {
     var kind = forcedKind || detectKind(text);
     if (kind === 'gas') return parseGas(text);
     if (kind === 'hydro') return parseHydro(text);
+    if (kind === 'water') return parseWater(text);
     return { kind: null, start: null, end: null, amount: null, billDays: null,
-             notes: ['This does not look like an Enbridge or Alectra bill. Type the numbers in.'] };
+             notes: ['This does not look like an Enbridge, Alectra or City of Guelph bill. Type the numbers in.'] };
   }
 
   /* ---------------- Shared math ---------------- */
@@ -172,6 +213,7 @@
     parseBill: parseBill,
     parseGas: parseGas,
     parseHydro: parseHydro,
+    parseWater: parseWater,
     detectKind: detectKind,
     parseWordDate: parseWordDate,
     parseSlashDate: parseSlashDate,
