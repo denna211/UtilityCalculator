@@ -6,6 +6,33 @@
 (function (root) {
   'use strict';
 
+  /* ---------------- text extraction ---------------- */
+
+  // pdf.js hands back text in whatever order the file stores it, and some
+  // statements store each row right to left, which puts every amount before
+  // its label. Rebuild the page from the item coordinates instead: group by
+  // baseline, sort each line left to right, then top of page down.
+  function textFromItems(items) {
+    var lines = [];
+    for (var i = 0; i < items.length; i++) {
+      var it = items[i];
+      if (!it || !it.str || !it.str.trim()) continue;
+      var tr = it.transform || [1, 0, 0, 1, 0, 0];
+      var x = tr[4], y = tr[5];
+      var line = null;
+      for (var j = 0; j < lines.length; j++) {
+        if (Math.abs(lines[j].y - y) <= 3) { line = lines[j]; break; }
+      }
+      if (!line) { line = { y: y, parts: [] }; lines.push(line); }
+      line.parts.push({ x: x, s: it.str });
+    }
+    lines.sort(function (a, b) { return b.y - a.y; });
+    return lines.map(function (l) {
+      l.parts.sort(function (a, b) { return a.x - b.x; });
+      return l.parts.map(function (p) { return p.s; }).join(' ').replace(/\s+/g, ' ').trim();
+    }).join('\n');
+  }
+
   var MONTHS = {
     jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
     jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11
@@ -232,6 +259,7 @@
   }
 
   var api = {
+    textFromItems: textFromItems,
     parseBill: parseBill,
     parseGas: parseGas,
     parseHydro: parseHydro,
