@@ -461,7 +461,7 @@
         });
       }).then(function(contents){
         var text = contents.map(function(tc){
-          return tc.items.map(function(it){ return it.str; }).join(' ');
+          return P.textFromItems(tc.items);
         }).join('\n');
 
         if(text.replace(/\s+/g,'').length < 200){
