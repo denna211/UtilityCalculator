@@ -40,6 +40,8 @@ Any push to the default branch redeploys.
 
 Each PDF is identified by its own markers, so a file dropped on the wrong card gets filed on the right one automatically. Older Alectra bills carried the city water lines themselves. If one of those is loaded alongside a Guelph water bill for overlapping dates, the app warns about double counting rather than silently adding both.
 
+Text is rebuilt from the coordinates of each fragment rather than read in file order. Some statements, including the current Alectra one, store each row right to left, which puts every dollar amount ahead of its label and scrambles the metering row. Grouping fragments by baseline and sorting them left to right makes the layout read correctly regardless of how the file stores it.
+
 Every extracted field stays editable, so a failed read or an odd bill is just a matter of typing the numbers in.
 
 ## Scanned bills
