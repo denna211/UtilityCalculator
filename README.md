@@ -31,6 +31,7 @@ Any push to the default branch redeploys.
 
 - Amount: `Total current charges`. That is the line above the Ontario Electricity Rebate, and it includes electricity, water, wastewater and stormwater. The Invoice Total is deliberately not used.
 - Dates: the electric row of the Metering Information table on page 2. If that row cannot be read, the water row is used and the app says so.
+- Two Alectra layouts are supported. The older one has a single `Total current charges` line. The newer statement does not, so the amount is taken as `Your Total Electricity Charges` plus HST, which is the same base the old line represented: before the Ontario Electricity Rebate and before any balance carried forward. The card states the arithmetic when it does this. Its dates come from the From and To columns of the metering row.
 
 **City of Guelph water**
 
@@ -40,6 +41,12 @@ Any push to the default branch redeploys.
 Each PDF is identified by its own markers, so a file dropped on the wrong card gets filed on the right one automatically. Older Alectra bills carried the city water lines themselves. If one of those is loaded alongside a Guelph water bill for overlapping dates, the app warns about double counting rather than silently adding both.
 
 Every extracted field stays editable, so a failed read or an odd bill is just a matter of typing the numbers in.
+
+## Scanned bills
+
+Some bills print as a flat image with no text layer, which is common when a portal preview is printed to PDF rather than downloaded. There is nothing in the file to read, and OCR is not a fix: on a page scanned at roughly 550 pixels wide, the metering row is a few pixels tall and comes back as noise, which is worse than nothing because it produces plausible wrong dates.
+
+When the app finds no text it says so, renders page one inside the card at four times scale, and puts the cursor in the first date field so the numbers can be typed while looking at the page. Downloading the real statement PDF from the provider, rather than printing a preview, restores automatic reading.
 
 ## The calculation
 
@@ -71,7 +78,6 @@ Shares are written to two decimals rather than the workbook's full precision.
 ## Changing things
 
 Adding a fourth provider means copying one bill card in the markup, adding a matching entry to the `KINDS` array in `index.html`, and writing a parse function in `parsers.js`. Nothing else is wired per utility.
-
 The tenant percentage defaults to 30 and is editable on the page. To change the default, edit the `value="30"` on the `pct` input in `index.html`. Colours and type live in the `:root` block at the top of the same file.
 
 If cdnjs is ever unreachable, the two script tags for pdf.js can point at `https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js` and the matching worker file instead.
