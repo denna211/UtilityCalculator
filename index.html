@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Utility Split</title>
-<meta name="description" content="Work out a tenant's share of a gas and hydro bill, with days away taken off.">
+<meta name="description" content="Work out a tenant's share of the gas, hydro and water bills, with days away taken off.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -19,6 +19,8 @@
     --gas-soft:#F5E7DA;
     --hydro:#2E6E86;
     --hydro-soft:#DFEAEF;
+    --water:#3E7C59;
+    --water-soft:#E1EDE5;
     --away:#8C97A0;
     --focus:#1B5A70;
     --pad:clamp(16px,3vw,32px);
@@ -36,7 +38,7 @@
     line-height:1.5;
     -webkit-font-smoothing:antialiased;
   }
-  .wrap{max-width:1020px;margin:0 auto;padding:var(--pad) var(--pad) 96px}
+  .wrap{max-width:1120px;margin:0 auto;padding:var(--pad) var(--pad) 96px}
 
   /* ---------- header ---------- */
   header{border-bottom:2px solid var(--ink);padding-bottom:18px;margin-bottom:28px}
@@ -48,7 +50,7 @@
     line-height:1;
     margin:0 0 8px;
   }
-  .lede{max-width:56ch;margin:0;color:var(--muted)}
+  .lede{max-width:60ch;margin:0;color:var(--muted)}
   .privacy{
     margin-top:12px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;
     text-transform:uppercase;color:var(--muted);
@@ -64,61 +66,65 @@
   .eyebrow::after{content:"";flex:1;height:1px;background:var(--rule)}
 
   /* ---------- bill cards ---------- */
-  .bills{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .bills{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
   .bill{
     background:var(--card);
     border:1px solid var(--rule);
     border-top:4px solid var(--accent);
-    padding:18px;
+    padding:16px;
   }
   .bill.gas{--accent:var(--gas);--soft:var(--gas-soft)}
   .bill.hydro{--accent:var(--hydro);--soft:var(--hydro-soft)}
+  .bill.water{--accent:var(--water);--soft:var(--water-soft)}
   .bill h2{
-    font-family:var(--display);font-size:20px;font-weight:700;letter-spacing:-.01em;
+    font-family:var(--display);font-size:18px;font-weight:700;letter-spacing:-.01em;
     margin:0 0 2px;
   }
-  .bill .src{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.04em}
+  .bill .src{font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.03em;line-height:1.4}
   .drop{
-    margin:14px 0;padding:16px;text-align:center;cursor:pointer;
+    margin:14px 0;padding:14px 10px;text-align:center;cursor:pointer;
     border:1.5px dashed var(--rule);background:transparent;
     display:block;width:100%;font:inherit;color:var(--muted);
   }
   .drop:hover,.drop.over{border-color:var(--accent);background:var(--soft);color:var(--ink)}
-  .drop strong{display:block;font-weight:600;color:var(--ink)}
-  .drop .hint{font-size:13px}
+  .drop strong{display:block;font-weight:600;color:var(--ink);font-size:14px;word-break:break-word}
+  .drop .hint{font-size:12.5px}
   .drop.loaded{border-style:solid;border-color:var(--accent);background:var(--soft);color:var(--ink)}
 
-  .fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  .f-full{grid-column:1/-1}
-  label{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;
+  .fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  label{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.09em;
     text-transform:uppercase;color:var(--muted);margin-bottom:5px}
   input,select{
-    width:100%;font-family:var(--mono);font-size:14px;color:var(--ink);
-    background:#fff;border:1px solid var(--rule);border-radius:0;padding:8px 9px;
+    width:100%;font-family:var(--mono);font-size:13.5px;color:var(--ink);
+    background:#fff;border:1px solid var(--rule);border-radius:0;padding:8px;
   }
   input:focus-visible,select:focus-visible,button:focus-visible,.drop:focus-visible{
     outline:2px solid var(--focus);outline-offset:2px;
   }
   .readout{
     margin-top:12px;padding-top:10px;border-top:1px solid var(--rule);
-    font-family:var(--mono);font-size:12.5px;color:var(--muted);
+    font-family:var(--mono);font-size:12px;color:var(--muted);
     display:flex;justify-content:space-between;gap:10px;
   }
   .readout b{color:var(--ink);font-weight:600}
   .note{
-    margin-top:10px;font-size:13px;color:var(--gas);
+    margin-top:10px;font-size:12.5px;color:var(--gas);
     border-left:2px solid var(--gas);padding-left:10px;
   }
   .note:empty{display:none}
+  .warn{
+    background:#FDF3E3;border:1px solid var(--gas);border-left-width:4px;
+    padding:12px 14px;margin-top:16px;font-size:13.5px;
+  }
 
   /* ---------- absence ---------- */
-  .choice{display:flex;gap:8px;margin-bottom:14px}
+  .choice{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
   .choice button{
     font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;
     padding:9px 16px;background:transparent;border:1px solid var(--rule);cursor:pointer;color:var(--muted);
   }
   .choice button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--paper)}
-  .away-row{display:grid;grid-template-columns:1fr 1fr auto auto;gap:12px;align-items:end;margin-bottom:10px}
+  .away-row{display:grid;grid-template-columns:1fr 1fr auto auto;gap:12px;align-items:end;margin-bottom:10px;max-width:640px}
   .away-row .nights{font-family:var(--mono);font-size:12.5px;color:var(--muted);padding-bottom:9px;white-space:nowrap}
   .icon-btn{
     background:transparent;border:1px solid var(--rule);cursor:pointer;color:var(--muted);
@@ -136,30 +142,32 @@
   .ribbons{background:var(--card);border:1px solid var(--rule);padding:18px var(--pad)}
   .ribbon{margin-bottom:18px}
   .ribbon:last-of-type{margin-bottom:0}
-  .ribbon-head{display:flex;justify-content:space-between;font-family:var(--mono);
+  .ribbon-head{display:flex;justify-content:space-between;gap:12px;font-family:var(--mono);
     font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
   .ribbon-head b{color:var(--ink);font-weight:600}
-  .track{position:relative;height:26px;background:repeating-linear-gradient(
+  .track{position:relative;height:24px;background:repeating-linear-gradient(
       90deg,var(--rule) 0 1px,transparent 1px 100%) 0 0/ calc(100%/24) 100%;
     border-bottom:1px solid var(--rule)}
   .span{position:absolute;top:0;bottom:0;background:var(--tone)}
   .span.gas{--tone:var(--gas-soft);border-left:2px solid var(--gas);border-right:2px solid var(--gas)}
   .span.hydro{--tone:var(--hydro-soft);border-left:2px solid var(--hydro);border-right:2px solid var(--hydro)}
+  .span.water{--tone:var(--water-soft);border-left:2px solid var(--water);border-right:2px solid var(--water)}
   .gap{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(
       45deg,var(--away) 0 2px,transparent 2px 6px);opacity:.75}
   .axis{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;
     color:var(--muted);margin-top:6px}
 
   /* ---------- results ---------- */
-  .totals{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}
+  .totals{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:18px}
   .tot{background:var(--card);border:1px solid var(--rule);border-left:4px solid var(--accent);padding:16px}
   .tot.gas{--accent:var(--gas)}
   .tot.hydro{--accent:var(--hydro)}
+  .tot.water{--accent:var(--water)}
   .tot h3{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;
     color:var(--muted);margin:0 0 10px;font-weight:600}
-  .big{font-family:var(--display);font-size:38px;font-weight:700;letter-spacing:-.02em;line-height:1}
-  .breakdown{margin-top:10px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
-  .breakdown div{display:flex;justify-content:space-between;border-top:1px solid var(--rule);padding:4px 0}
+  .big{font-family:var(--display);font-size:34px;font-weight:700;letter-spacing:-.02em;line-height:1}
+  .breakdown{margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--muted)}
+  .breakdown div{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--rule);padding:4px 0}
   .grand{
     margin-top:18px;background:var(--ink);color:var(--paper);padding:18px var(--pad);
     display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;
@@ -187,9 +195,12 @@
   footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--rule);
     font-family:var(--mono);font-size:11.5px;color:var(--muted);line-height:1.8}
 
-  @media (max-width:760px){
+  @media (max-width:1000px){
+    .bills,.totals{grid-template-columns:1fr 1fr}
+  }
+  @media (max-width:680px){
     .bills,.totals,.settings{grid-template-columns:1fr}
-    .away-row{grid-template-columns:1fr 1fr;}
+    .away-row{grid-template-columns:1fr 1fr}
     .away-row .nights{grid-column:1/-1;padding-bottom:0}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
@@ -200,7 +211,7 @@
 
   <header>
     <h1>Utility Split</h1>
-    <p class="lede">Drop in the gas and hydro bills, say when the tenant was away, and get their share of each cycle plus a row you can paste straight into the tracking workbook.</p>
+    <p class="lede">Drop in the gas, hydro and water bills, say when the tenant was away, and get their share of each cycle plus a row you can paste straight into the tracking workbook.</p>
     <p class="privacy">Bills are read in your browser. Nothing is uploaded or stored.</p>
   </header>
 
@@ -234,7 +245,7 @@
       </div>
 
       <div class="bill hydro" id="card-hydro">
-        <h2>Hydro, water, stormwater</h2>
+        <h2>Hydro</h2>
         <div class="src">Alectra · total current charges, before the rebate</div>
         <button class="drop" id="drop-hydro" type="button">
           <strong>Drop the Alectra PDF here</strong>
@@ -258,7 +269,33 @@
         <p class="note" id="hydro-note"></p>
       </div>
 
+      <div class="bill water" id="card-water">
+        <h2>Water and stormwater</h2>
+        <div class="src">City of Guelph · total current charges</div>
+        <button class="drop" id="drop-water" type="button">
+          <strong>Drop the Guelph water PDF here</strong>
+          <span class="hint">or click to choose a file</span>
+        </button>
+        <input type="file" id="file-water" accept="application/pdf,.pdf" hidden>
+        <div class="fields">
+          <div><label for="water-start">Cycle start</label><input type="date" id="water-start"></div>
+          <div><label for="water-end">Cycle end</label><input type="date" id="water-end"></div>
+          <div><label for="water-amount">Bill amount</label><input type="number" step="0.01" min="0" id="water-amount" placeholder="0.00"></div>
+          <div>
+            <label for="water-method">Day count</label>
+            <select id="water-method">
+              <option value="diff" selected>End minus start</option>
+              <option value="diffMinus1">End minus start, less 1</option>
+              <option value="diffPlus1">End minus start, plus 1</option>
+            </select>
+          </div>
+        </div>
+        <div class="readout"><span>Days in cycle</span><b id="water-days">–</b></div>
+        <p class="note" id="water-note"></p>
+      </div>
+
     </div>
+    <div id="overlap-warning"></div>
   </section>
 
   <section>
@@ -279,7 +316,7 @@
         <label for="pct">Tenant's percentage</label>
         <input type="number" id="pct" value="30" min="0" max="100" step="0.5">
       </div>
-      <p class="lede" style="margin:0">Applied to the full bill, then prorated by the nights the tenant was actually in the unit.</p>
+      <p class="lede" style="margin:0">Applied to each full bill, then prorated by the nights the tenant was actually in the unit.</p>
     </div>
   </section>
 
@@ -291,8 +328,8 @@
   </section>
 
   <footer>
-    Gas amount is the total including HST. Hydro amount is total current charges, which covers electricity, water, wastewater and stormwater, taken before the Ontario Electricity Rebate.<br>
-    Day counts follow the tracking workbook: gas is end minus start, hydro is end minus start less one, since hydro cycles share their end and start dates.
+    Gas is the total including HST. Hydro is total current charges, taken before the Ontario Electricity Rebate. Water is total current charges from the City of Guelph, before any balance carried forward.<br>
+    Day counts follow the tracking workbook: gas and water are end minus start, hydro is end minus start less one, since hydro cycles share their end and start dates. Any card can be switched.
   </footer>
 
 </div>
@@ -310,9 +347,23 @@
       'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
 
+  // One entry per bill. Adding a fourth utility means adding a card in the
+  // markup and an entry here, nothing else.
+  var KINDS = [
+    { key:'gas',   short:'Gas',   long:'Gas',
+      ribbon:'Gas cycle',   drop:'Drop the Enbridge PDF here',     cols:'short' },
+    { key:'hydro', short:'Hydro', long:'Hydro',
+      ribbon:'Hydro cycle', drop:'Drop the Alectra PDF here',      cols:'long' },
+    { key:'water', short:'Water', long:'Water, wastewater and stormwater',
+      ribbon:'Water cycle', drop:'Drop the Guelph water PDF here', cols:'short' }
+  ];
+  var byKey = {};
+  KINDS.forEach(function(k){ byKey[k.key] = k; });
+
   var $ = function(id){ return document.getElementById(id); };
   var away = [];
   var awaySeq = 0;
+  var hydroHasWaterLines = false;
 
   /* ---------- helpers ---------- */
 
@@ -328,12 +379,13 @@
   function pretty(d){
     return d ? d.toLocaleDateString('en-CA',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}) : '';
   }
+  function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
   function toast(msg){
     var t = $('toast');
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(t._h);
-    t._h = setTimeout(function(){ t.classList.remove('show'); }, 2200);
+    t._h = setTimeout(function(){ t.classList.remove('show'); }, 2400);
   }
   function copy(text, msg){
     if(navigator.clipboard && navigator.clipboard.writeText){
@@ -370,7 +422,7 @@
         var r = P.parseBill(text, kind);
         if(kind !== expected){
           note.textContent = '';
-          toast('That is the ' + (kind==='gas'?'gas':'hydro') + ' bill. Filed it there.');
+          toast('That is the ' + byKey[kind].short.toLowerCase() + ' bill. Filed it there.');
         }
         apply(kind, r, file.name);
       }).catch(function(err){
@@ -385,25 +437,31 @@
     if(r.start) $(kind+'-start').value = P.toISO(r.start);
     if(r.end) $(kind+'-end').value = P.toISO(r.end);
     if(r.amount !== null) $(kind+'-amount').value = r.amount.toFixed(2);
+
     var drop = $('drop-'+kind);
     drop.classList.add('loaded');
     drop.querySelector('strong').textContent = filename;
     drop.querySelector('.hint').textContent = 'Read successfully. Click to swap in a different file.';
-    var note = $(kind+'-note');
+
     var msgs = r.notes.slice();
-    if(kind==='hydro' && r.billDays){
-      var d = P.cycleDays(parseInputDate($('hydro-start').value), parseInputDate($('hydro-end').value), $('hydro-method').value);
-      if(d !== r.billDays) msgs.push('The bill states ' + r.billDays + ' days for this cycle. This app counts ' + d + '. Change the day count or the dates if you want to match the bill.');
+    if(r.billDays){
+      var d = P.cycleDays(parseInputDate($(kind+'-start').value), parseInputDate($(kind+'-end').value), $(kind+'-method').value);
+      if(d !== r.billDays){
+        msgs.push('The bill states ' + r.billDays + ' days for this cycle. This app counts ' + d +
+                  '. Change the day count or the dates if you want to match the bill.');
+      }
     }
-    note.textContent = msgs.join(' ');
+    $(kind+'-note').textContent = msgs.join(' ');
+
+    if(kind === 'hydro') hydroHasWaterLines = !!r.includesWater;
     render();
   }
 
-  function wireDrop(kind){
-    var drop = $('drop-'+kind), input = $('file-'+kind);
+  KINDS.forEach(function(k){
+    var drop = $('drop-'+k.key), input = $('file-'+k.key);
     drop.addEventListener('click', function(){ input.click(); });
     input.addEventListener('change', function(){
-      if(input.files && input.files[0]) readPdf(input.files[0], kind);
+      if(input.files && input.files[0]) readPdf(input.files[0], k.key);
       input.value = '';
     });
     ['dragenter','dragover'].forEach(function(ev){
@@ -414,10 +472,9 @@
     });
     drop.addEventListener('drop', function(e){
       var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-      if(f) readPdf(f, kind);
+      if(f) readPdf(f, k.key);
     });
-  }
-  wireDrop('gas'); wireDrop('hydro');
+  });
 
   /* ---------- absences ---------- */
 
@@ -461,12 +518,11 @@
 
   /* ---------- the calculation ---------- */
 
-  function readBill(kind){
-    var start = parseInputDate($(kind+'-start').value);
-    var end = parseInputDate($(kind+'-end').value);
-    var amount = $(kind+'-amount').value === '' ? null : parseFloat($(kind+'-amount').value);
-    var method = $(kind+'-method').value;
-    var days = P.cycleDays(start, end, method);
+  function readBill(key){
+    var start = parseInputDate($(key+'-start').value);
+    var end = parseInputDate($(key+'-end').value);
+    var amount = $(key+'-amount').value === '' ? null : parseFloat($(key+'-amount').value);
+    var days = P.cycleDays(start, end, $(key+'-method').value);
     if(days !== null && days <= 0) days = null;
     var ranges = away.filter(function(a){ return a.from && a.to && a.to > a.from; });
     var awayDays = days ? Math.min(P.awayInCycle(start, end, ranges), days) : 0;
@@ -474,7 +530,7 @@
     var pct = parseFloat($('pct').value);
     if(!isFinite(pct)) pct = 0;
     return {
-      kind:kind, start:start, end:end, amount:amount, method:method, days:days,
+      key:key, meta:byKey[key], start:start, end:end, amount:amount, days:days,
       awayDays:awayDays, present:present, pct:pct,
       rawDiff: (start && end) ? P.dayDiff(start,end) : null,
       share: (amount !== null && days) ? P.share(amount, pct, present, days) : null,
@@ -482,32 +538,31 @@
     };
   }
 
-  function rowsFor(b){
-    // Tab separated, in the column order each sheet already uses.
+  // Tab separated, in the column order the workbook tabs already use.
+  function rowFor(b){
     var s = P.toISO(b.start), e = P.toISO(b.end), amt = b.amount.toFixed(2);
-    if(b.kind === 'gas') return [s,e,amt,b.days,b.present,b.share.toFixed(2)].join('\t');
-    return [s,e,amt,b.rawDiff,b.days,b.present,b.share.toFixed(2)].join('\t');
+    if(b.meta.cols === 'long') return [s,e,amt,b.rawDiff,b.days,b.present,b.share.toFixed(2)].join('\t');
+    return [s,e,amt,b.days,b.present,b.share.toFixed(2)].join('\t');
   }
 
   function csvFor(list){
     var head = 'Utility,Start,End,Amount,Days in cycle,Nights away,Days present,Percent,Tenant share';
     var lines = list.map(function(b){
-      return [b.kind==='gas'?'Gas':'Hydro', P.toISO(b.start), P.toISO(b.end), b.amount.toFixed(2),
+      return [b.meta.short, P.toISO(b.start), P.toISO(b.end), b.amount.toFixed(2),
               b.days, b.awayDays, b.present, b.pct, b.share.toFixed(2)].join(',');
     });
     return head + '\n' + lines.join('\n') + '\n';
   }
 
   function summaryFor(list, total){
-    var lines = list.map(function(b){
-      var label = b.kind === 'gas' ? 'Gas' : 'Hydro, water and stormwater';
-      var l = label + ', ' + pretty(b.start) + ' to ' + pretty(b.end) + '\n' +
+    var blocks = list.map(function(b){
+      var l = b.meta.long + ', ' + pretty(b.start) + ' to ' + pretty(b.end) + '\n' +
               '  Bill ' + money(b.amount) + ' over ' + b.days + ' days, your share ' + b.pct + '%\n';
       if(b.awayDays > 0) l += '  Away ' + b.awayDays + ' of those nights, charged for ' + b.present + ' days\n';
       l += '  You owe ' + money(b.share);
       return l;
     });
-    return lines.join('\n\n') + '\n\nTotal due: ' + money(total);
+    return blocks.join('\n\n') + '\n\nTotal due: ' + money(total);
   }
 
   /* ---------- the cycle ribbons ---------- */
@@ -524,7 +579,7 @@
 
     var html = '<div class="ribbons">';
     list.forEach(function(b){
-      var bars = '<div class="span ' + b.kind + '" style="left:' + pos(+b.start) +
+      var bars = '<div class="span ' + b.key + '" style="left:' + pos(+b.start) +
                  ';width:' + (((+b.end - +b.start)/span)*100).toFixed(3) + '%"></div>';
       away.forEach(function(a){
         if(!a.from || !a.to || a.to <= a.from) return;
@@ -534,7 +589,7 @@
       });
       html +=
         '<div class="ribbon">' +
-          '<div class="ribbon-head"><span>' + (b.kind==='gas'?'Gas cycle':'Hydro cycle') + '</span>' +
+          '<div class="ribbon-head"><span>' + b.meta.ribbon + '</span>' +
           '<span><b>' + b.present + '</b> of ' + b.days + ' days charged</span></div>' +
           '<div class="track">' + bars + '</div>' +
           '<div class="axis"><span>' + pretty(b.start) + '</span><span>' + pretty(b.end) + '</span></div>' +
@@ -544,12 +599,29 @@
     return html;
   }
 
+  /* ---------- warnings that span cards ---------- */
+
+  function overlapWarning(bills){
+    var hydro = bills.hydro, water = bills.water;
+    var box = $('overlap-warning');
+    if(hydroHasWaterLines && hydro.complete && water.complete &&
+       +water.start < +hydro.end && +water.end > +hydro.start){
+      box.innerHTML = '<div class="warn"><b>Check for double counting.</b> This Alectra bill still carries ' +
+        'the city water, wastewater and stormwater lines, and the water bill you added covers overlapping ' +
+        'dates. Use one or the other for that period, not both.</div>';
+    } else {
+      box.innerHTML = '';
+    }
+  }
+
   /* ---------- render ---------- */
 
   function render(){
-    var gas = readBill('gas'), hydro = readBill('hydro');
-    $('gas-days').textContent = gas.days === null ? '–' : gas.days;
-    $('hydro-days').textContent = hydro.days === null ? '–' : hydro.days;
+    var bills = {};
+    KINDS.forEach(function(k){ bills[k.key] = readBill(k.key); });
+    KINDS.forEach(function(k){
+      $(k.key+'-days').textContent = bills[k.key].days === null ? '–' : bills[k.key].days;
+    });
 
     away.forEach(function(a){
       var row = document.querySelector('.away-row[data-id="' + a.id + '"]');
@@ -558,7 +630,9 @@
       row.querySelector('.nights').textContent = n === null ? '– nights' : n + (n===1?' night':' nights');
     });
 
-    var list = [gas, hydro].filter(function(b){ return b.complete; });
+    overlapWarning(bills);
+
+    var list = KINDS.map(function(k){ return bills[k.key]; }).filter(function(b){ return b.complete; });
     var box = $('results');
     if(list.length === 0){
       box.innerHTML = '<div class="empty">Add a bill above and the split shows up here.</div>';
@@ -569,8 +643,8 @@
     var html = ribbons(list) + '<div class="totals">';
     list.forEach(function(b){
       html +=
-        '<div class="tot ' + b.kind + '">' +
-          '<h3>' + (b.kind==='gas' ? 'Gas share' : 'Hydro share') + '</h3>' +
+        '<div class="tot ' + b.key + '">' +
+          '<h3>' + esc(b.meta.short) + ' share</h3>' +
           '<div class="big">' + money(b.share) + '</div>' +
           '<div class="breakdown">' +
             '<div><span>Bill total</span><span>' + money(b.amount) + '</span></div>' +
@@ -584,19 +658,22 @@
     html += '</div>';
     html += '<div class="grand"><span class="lbl">Total owed by tenant</span><span class="amt">' + money(total) + '</span></div>';
     html += '<div class="actions">';
-    if(gas.complete) html += '<button type="button" data-act="row-gas">Copy gas row</button>';
-    if(hydro.complete) html += '<button type="button" data-act="row-hydro">Copy hydro row</button>';
+    list.forEach(function(b){
+      html += '<button type="button" data-act="row" data-key="' + b.key + '">Copy ' + esc(b.meta.short.toLowerCase()) + ' row</button>';
+    });
     html += '<button type="button" data-act="csv">Download CSV</button>';
     html += '<button type="button" data-act="summary">Copy summary</button>';
     html += '</div>';
-    html += '<div class="summary" id="summary-text">' + summaryFor(list, total).replace(/</g,'&lt;') + '</div>';
+    html += '<div class="summary" id="summary-text">' + esc(summaryFor(list, total)) + '</div>';
     box.innerHTML = html;
 
     box.querySelectorAll('[data-act]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var a = btn.dataset.act;
-        if(a === 'row-gas') copy(rowsFor(gas), 'Gas row copied. Paste into the Gas tab.');
-        if(a === 'row-hydro') copy(rowsFor(hydro), 'Hydro row copied. Paste into the Hydro tab.');
+        if(a === 'row'){
+          var b = bills[btn.dataset.key];
+          copy(rowFor(b), b.meta.short + ' row copied. Paste into the ' + b.meta.short + ' tab.');
+        }
         if(a === 'summary') copy(summaryFor(list, total), 'Summary copied.');
         if(a === 'csv'){
           var csv = csvFor(list);
@@ -610,16 +687,16 @@
           var stamp = P.toISO(list[list.length-1].end) || 'export';
           link.href = url; link.download = 'utility-split-' + stamp + '.csv';
           document.body.appendChild(link); link.click(); document.body.removeChild(link);
-          if(window.URL && window.URL.revokeObjectURL && url.indexOf('blob:') === 0) URL.revokeObjectURL(url);
+          if(url.indexOf('blob:') === 0) URL.revokeObjectURL(url);
         }
       });
     });
   }
 
-  ['gas','hydro'].forEach(function(k){
+  KINDS.forEach(function(k){
     ['-start','-end','-amount','-method'].forEach(function(sfx){
-      $(k+sfx).addEventListener('change', render);
-      $(k+sfx).addEventListener('input', render);
+      $(k.key+sfx).addEventListener('change', render);
+      $(k.key+sfx).addEventListener('input', render);
     });
   });
   $('pct').addEventListener('input', render);
