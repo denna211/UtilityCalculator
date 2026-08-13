@@ -116,6 +116,13 @@
     background:#FDF3E3;border:1px solid var(--gas);border-left-width:4px;
     padding:12px 14px;margin-top:16px;font-size:13.5px;
   }
+  .scan{margin:12px 0;border:1px solid var(--rule);background:#fff}
+  .scan canvas{display:block;width:100%;height:auto}
+  .scan-bar{
+    display:flex;justify-content:space-between;align-items:center;gap:8px;
+    padding:7px 10px;border-top:1px solid var(--rule);
+    font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--muted);
+  }
 
   /* ---------- absence ---------- */
   .choice{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
@@ -402,13 +409,51 @@
 
   /* ---------- reading a PDF ---------- */
 
+  // A scan has no text layer, so there is nothing to parse. Render page one
+  // into the card instead, big enough to read the numbers off while typing.
+  function showScan(kind, doc, filename){
+    clearScan(kind);
+    doc.getPage(1).then(function(page){
+      var base = page.getViewport({scale:1});
+      var scale = Math.min(4, 1500 / base.width);
+      var vp = page.getViewport({scale:scale});
+      var canvas = document.createElement('canvas');
+      canvas.width = vp.width; canvas.height = vp.height;
+      var box = document.createElement('div');
+      box.className = 'scan';
+      box.id = 'scan-' + kind;
+      box.appendChild(canvas);
+      var bar = document.createElement('div');
+      bar.className = 'scan-bar';
+      bar.innerHTML = '<span>' + esc(filename) + '</span>';
+      var open = document.createElement('button');
+      open.type = 'button';
+      open.className = 'link-btn';
+      open.textContent = 'Open full size';
+      open.addEventListener('click', function(){
+        canvas.toBlob(function(b){ window.open(URL.createObjectURL(b), '_blank'); });
+      });
+      bar.appendChild(open);
+      box.appendChild(bar);
+      $('card-' + kind).insertBefore(box, $('drop-' + kind).nextSibling);
+      page.render({canvasContext:canvas.getContext('2d'), viewport:vp});
+      $(kind + '-start').focus();
+    });
+  }
+  function clearScan(kind){
+    var old = $('scan-' + kind);
+    if(old) old.remove();
+  }
+
   function readPdf(file, expected){
     var note = $(expected + '-note');
     note.textContent = 'Reading ' + file.name + '…';
     var reader = new FileReader();
     reader.onload = function(){
       var task = window.pdfjsLib.getDocument({data:new Uint8Array(reader.result)});
+      var pdfDoc = null;
       task.promise.then(function(doc){
+        pdfDoc = doc;
         var pages = [];
         for(var i=1;i<=doc.numPages;i++) pages.push(doc.getPage(i));
         return Promise.all(pages).then(function(ps){
@@ -418,7 +463,20 @@
         var text = contents.map(function(tc){
           return tc.items.map(function(it){ return it.str; }).join(' ');
         }).join('\n');
+
+        if(text.replace(/\s+/g,'').length < 200){
+          $('drop-'+expected).classList.add('loaded');
+          $('drop-'+expected).querySelector('strong').textContent = file.name;
+          $('drop-'+expected).querySelector('.hint').textContent = 'Scanned image. Click to swap in a different file.';
+          note.textContent = 'This PDF is a scan with no text in it, so nothing can be read out automatically. ' +
+            'The page is below, type the numbers in. If you can download the statement PDF from the provider instead ' +
+            'of printing a preview, this app can read that one on its own.';
+          showScan(expected, pdfDoc, file.name);
+          return;
+        }
+
         var kind = P.detectKind(text) || expected;
+        clearScan(kind);
         var r = P.parseBill(text, kind);
         if(kind !== expected){
           note.textContent = '';
